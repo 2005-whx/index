@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日祝福网页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        birthday: {
+                            pink: '#FFB6C1',
+                            darkPink: '#FF69B4',
+                            yellow: '#FFD700',
+                            purple: '#9370DB'
+                        }
+                    },
+                    animation: {
+                        'firework': 'firework 1.5s ease-in-out infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                        'bounce-slow': 'bounce 4s ease-in-out infinite',
+                        'fade-in': 'fadeIn 1.5s ease-out forwards',
+                        'slide-up': 'slideUp 1s ease-out forwards',
+                        'shake': 'shake 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        firework: {
+                            '0%': { transform: 'scale(0.8) rotate(0deg)' },
+                            '100%': { transform: 'scale(1.2) rotate(5deg)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(50px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '50%': { transform: 'translateX(5px)' },
+                            '75%': { transform: 'translateX(-5px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.6);
+            }
+            .bg-blur {
+                backdrop-filter: blur(8px);
+            }
+            .firework-particle {
+                position: absolute;
+                border-radius: 50%;
+                animation: particle 2s ease-out forwards;
+            }
+            /* 彩蛋专属花瓣/粒子动画 */
+            .egg-petal {
+                position: absolute;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 9999;
+                animation: petalFall 3s ease-in-out forwards;
+            }
+            .egg-confetti {
+                position: absolute;
+                pointer-events: none;
+                z-index: 9999;
+                animation: confettiFall 4s ease-in-out forwards;
+            }
+            @keyframes particle {
+                0% { transform: scale(1); opacity: 1; }
+                50% { opacity: 0.8; }
+                100% { transform: scale(0.2) translateY(80px); opacity: 0; }
+            }
+            @keyframes petalFall {
+                0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+            }
+            @keyframes confettiFall {
+                0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+            }
+            .page {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                padding: 1rem !important;
+                box-sizing: border-box !important;
+            }
+            .page-transition {
+                transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                opacity: 0;
+                transform: scale(0.95);
+                pointer-events: none;
+            }
+            .page-transition.active {
+                opacity: 1;
+                transform: scale(1);
+                pointer-events: auto;
+            }
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden bg-birthday-pink m-0 p-0">
+    <!-- 背景音乐（主） -->
+    <audio id="birthdayMusic" loop>
+        <source src="https://music.163.com/song/media/outer/url?id=1818341105.mp3" type="audio/mpeg">
+        <source src="https://cdn.freesound.org/previews/349/349770_4948101-lq.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- 彩蛋专属音乐 -->
+    <audio id="eggMusic">
+        <source src="https://music.163.com/song/media/outer/url?id=28763218.mp3" type="audio/mpeg">
+        <source src="https://cdn.freesound.org/previews/613/613651_10902506-lq.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 声音控制按钮 -->
+    <button id="soundBtn" class="fixed top-4 right-4 z-50 w-12 h-12 rounded-full bg-white/80 flex items-center justify-center text-birthday-darkPink hover:bg-birthday-darkPink hover:text-white transition-all shadow-lg">
+        <i class="fa fa-volume-off" id="soundIcon"></i>
+    </button>
+
+    <!-- 页面容器 -->
+    <div id="pageContainer" class="relative w-full h-screen">
+        <!-- 页面1：烟花开场 -->
+        <div id="page1" class="page page-transition active absolute inset-0 bg-black">
+            <div class="text-center">
+                <div id="birthdayText" class="text-[clamp(2rem,10vw,6rem)] font-bold text-white text-shadow animate-fade-in">
+                    生日快乐❤️
+                </div>
+                <div class="mt-8 animate-slide-up">
+                    <button id="btnPage1To2" class="px-8 py-3 bg-birthday-darkPink text-white rounded-full text-xl font-bold hover:bg-birthday-purple transition-all duration-300 transform hover:scale-110 shadow-lg">
+                        开启祝福
+                    </button>
+                </div>
+            </div>
+            <div id="fireworkContainer" class="absolute inset-0 pointer-events-none"></div>
+        </div>
+
+        <!-- 页面2：选择界面 -->
+        <div id="page2" class="page page-transition absolute inset-0 hidden bg-birthday-pink">
+            <div class="text-center w-full max-w-md">
+                <div class="text-4xl font-bold text-white mb-8 animate-fade-in">
+                    你喜欢这个生日祝福吗？
+                </div>
+                <div class="relative w-full bg-white/80 bg-blur rounded-2xl flex flex-col items-center justify-center p-6 animate-slide-up shadow-xl">
+                    <img src="https://via.placeholder.com/100" alt="蛋糕" class="w-24 h-24 mb-6 animate-float" id="cakeImg">
+                    <div class="text-3xl font-bold mb-8">生日快乐</div>
+                    <div class="text-lg italic text-gray-600">Happy Birthday</div>
+                    <div class="mt-12 flex gap-8 justify-center">
+                        <button id="btnPage2To4" class="px-6 py-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all transform hover:scale-105 shadow-md">
+                            我很喜欢
+                        </button>
+                        <button id="btnPage2NoAction" class="px-6 py-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all transform hover:scale-105 shadow-md">
+                            我不喜欢
+                        </button>
+                    </div>
+                </div>
+                <div class="absolute top-10 left-1/2 -translate-x-1/2 w-16 h-16 animate-float" style="animation-delay: 0.5s">
+                    <img src="https://via.placeholder.com/64" alt="装饰" class="w-full h-full rounded-full" id="decor1">
+                </div>
+            </div>
+        </div>
+
+        <!-- 页面3：登录界面（可选，如需保留可启用） -->
+        <div id="page3" class="page page-transition absolute inset-0 hidden bg-birthday-pink">
+            <div class="text-center w-full max-w-md">
+                <div class="text-4xl font-bold text-white mb-8 animate-fade-in">
+                    请输入信息进入
+                </div>
+                <div class="relative w-full bg-white/80 bg-blur rounded-2xl flex flex-col items-center justify-center p-8 animate-slide-up shadow-xl">
+                    <div class="text-3xl font-bold mb-8">生日快乐</div>
+                    <div class="w-full mb-6">
+                        <input type="text" placeholder="姓名" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-birthday-darkPink shadow-sm">
+                    </div>
+                    <div class="w-full mb-8">
+                        <input type="password" placeholder="密码" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-birthday-darkPink shadow-sm">
+                    </div>
+                    <button id="btnPage3To4" class="w-full py-3 bg-birthday-darkPink text-white rounded-lg font-bold hover:bg-birthday-purple transition-all transform hover:scale-105 shadow-md">
+                        进入
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页面4：祝福文案 -->
+        <div id="page4" class="page page-transition absolute inset-0 hidden bg-birthday-pink">
+            <div class="w-full max-w-2xl bg-white/90 bg-blur rounded-2xl p-8 animate-slide-up shadow-xl">
+                <div class="space-y-4 text-xl text-gray-700">
+                    <p class="flex items-center gap-3"><i class="fa fa-gift text-birthday-yellow text-2xl"></i> 祝你可爱依旧，快乐多多，</p>
+                    <p class="flex items-center gap-3"><i class="fa fa-birthday-cake text-birthday-darkPink text-2xl"></i> 愿你三冬暖，愿你春不寒，</p>
+                    <p class="flex items-center gap-3"><i class="fa fa-lightbulb-o text-yellow-400 text-2xl"></i> 愿你天黑有灯，下雨有伞，</p>
+                    <p class="flex items-center gap-3"><i class="fa fa-beer text-amber-600 text-2xl"></i> 愿你一路上，有良人相伴，</p>
+                    <p class="flex items-center gap-3"><i class="fa fa-glass text-purple-500 text-2xl"></i> 愿你道路漫长，归来仍是少年。</p>
+                    <p class="flex items-center gap-3 mt-6 text-2xl font-bold text-birthday-darkPink"><i class="fa fa-heart text-red-500 text-2xl"></i> 祝你开开心心，祝你生日快乐。</p>
+                </div>
+                <button id="btnPage4To5" class="mt-10 w-full max-w-xs mx-auto block px-8 py-3 bg-birthday-darkPink text-white rounded-full text-lg font-bold hover:bg-birthday-purple transition-all transform hover:scale-105 shadow-md">
+                    查看更多祝福
+                </button>
+            </div>
+        </div>
+
+        <!-- 页面5：贺卡界面 -->
+        <div id="page5" class="page page-transition absolute inset-0 hidden bg-birthday-pink">
+            <div class="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white/90 bg-blur rounded-2xl p-6 animate-fade-in shadow-xl">
+                    <div class="text-xl font-bold mb-4 text-birthday-darkPink">希望你这个大傻子</div>
+                    <p class="mb-2 text-gray-700">所有的梦想都能实现</p>
+                    <p class="mb-2 text-gray-700">所有的期待都能出现</p>
+                    <p class="text-gray-700">所有的付出都能兑现在你生日来临之即。</p>
+                    <div class="mt-6 rounded-lg overflow-hidden shadow-md">
+                        <img src="https://via.placeholder.com/300x200" alt="生日照片" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" id="photo1">
+                    </div>
+                </div>
+                <div class="bg-white/90 bg-blur rounded-2xl p-6 animate-slide-up shadow-xl" style="animation-delay: 0.3s">
+                    <div class="text-xl font-bold mb-4 text-birthday-darkPink">小寿星</div>
+                    <p class="mb-2 text-gray-700">愿你能精致到老，眼里</p>
+                    <p class="mb-2 text-gray-700">长着太阳，笑里全是坦荡。懂得都懂了</p>
+                    <p class="mb-2 text-gray-700">阳光下永远像个孩子，风雨里</p>
+                    <p class="mb-2 text-gray-700">像个大人，无畏亦无惧。</p>
+                    <p class="mb-2 text-gray-700">遇见了你，而是遇见了你</p>
+                    <p class="mb-2 text-gray-700">才开始了我这段最好的时光。</p>
+                    <p class="text-gray-700 font-bold">承蒙时光不弃，感谢相遇</p>
+                </div>
+                <button id="btnPage5To6" class="mt-6 col-span-1 md:col-span-2 mx-auto block px-8 py-3 bg-birthday-darkPink text-white rounded-full text-lg font-bold hover:bg-birthday-purple transition-all transform hover:scale-105 shadow-md">
+                    更多惊喜
+                </button>
+            </div>
+        </div>
+
+        <!-- 页面6：彩蛋界面 -->
+        <div id="page6" class="page page-transition absolute inset-0 hidden bg-birthday-pink">
+            <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white/90 bg-blur rounded-2xl p-6 animate-fade-in shadow-xl">
+                    <div class="text-xl font-bold mb-4 text-birthday-darkPink">祝你生日快乐</div>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-birthday-cake text-birthday-darkPink"></i>“生”逢盛世</p>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-envelope-o text-yellow-500"></i>“日”新月异</p>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-coffee text-brown-500"></i>“快”乐生活</p>
+                    <p class="flex items-center gap-2 mb-4 text-gray-700"><i class="fa fa-heart text-red-500"></i>“乐”不思蜀</p>
+                    <p class="font-bold text-birthday-purple">Happy Birthday</p>
+                    <div class="mt-4 rounded-lg overflow-hidden shadow-md">
+                        <img src="https://via.placeholder.com/200x150" alt="生日照片" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" id="photo2">
+                    </div>
+                </div>
+                <div class="bg-white/90 bg-blur rounded-2xl p-6 animate-slide-up shadow-xl" style="animation-delay: 0.3s">
+                    <div class="text-xl font-bold mb-4 text-birthday-darkPink">祝你笑口常开</div>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-smile-o text-yellow-400"></i>幸福美满</p>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-beer text-amber-600"></i>生活如意</p>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-search text-blue-500"></i>工作顺心</p>
+                    <p class="flex items-center gap-2 mb-2 text-gray-700"><i class="fa fa-glass text-purple-500"></i>事业有成</p>
+                    <p class="flex items-center gap-2 text-gray-700"><i class="fa fa-bullseye text-green-500"></i>万事大吉</p>
+                    <div class="mt-4 rounded-lg overflow-hidden shadow-md">
+                        <img src="https://via.placeholder.com/200x150" alt="生日照片" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" id="photo3">
+                    </div>
+                </div>
+                <div class="bg-white/90 bg-blur rounded-2xl p-6 animate-slide-up shadow-xl" style="animation-delay: 0.6s">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2 text-xl font-bold text-birthday-darkPink">
+                            <i class="fa fa-strawberry text-red-500"></i> 生日快乐呀~
+                        </div>
+                        <button id="btnEasterEgg" class="text-purple-600 font-bold hover:underline transition-all">点击有彩蛋</button>
+                    </div>
+                    <div class="w-full h-64 rounded-lg overflow-hidden shadow-md">
+                        <img src="https://via.placeholder.com/300x240" alt="生日照片" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" id="photo4">
+                    </div>
+                </div>
+                <button id="btnPage6To1" class="mt-6 col-span-1 md:col-span-3 mx-auto block px-8 py-3 bg-birthday-purple text-white rounded-full text-lg font-bold hover:bg-birthday-darkPink transition-all transform hover:scale-105 shadow-md">
+                    重新开始
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面管理核心逻辑
+        const pageManager = {
+            pages: ['page1', 'page2', 'page3', 'page4', 'page5', 'page6'],
+            currentPage: 0,
+            
+            // 初始化所有页面状态
+            init: function() {
+                this.pages.forEach((pageId, index) => {
+                    const page = document.getElementById(pageId);
+                    if (index !== 0) {
+                        page.classList.add('hidden');
+                    }
+                });
+                this.initFireworks();
+                this.initMusic();
+                this.bindEvents();
+            },
+            
+            // 页面跳转核心方法
+            goToPage: function(targetIndex) {
+                // 隐藏当前页面
+                const currentEl = document.getElementById(this.pages[this.currentPage]);
+                currentEl.classList.remove('active');
+                
+                // 延迟切换，保证过渡动画完整
+                setTimeout(() => {
+                    currentEl.classList.add('hidden');
+                    this.currentPage = targetIndex;
+                    
+                    // 显示目标页面
+                    const targetEl = document.getElementById(this.pages[targetIndex]);
+                    targetEl.classList.remove('hidden');
+                    setTimeout(() => {
+                        targetEl.classList.add('active');
+                    }, 50);
+                    
+                    // 播放页面切换音效（可选）
+                    this.playClickSound();
+                }, 400);
+            },
+            
+            // 初始化烟花效果
+            initFireworks: function() {
+                const container = document.getElementById('fireworkContainer');
+                const width = container.offsetWidth;
+                const height = container.offsetHeight;
+                
+                // 自动生成烟花
+                setInterval(() => {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height * 0.8;
+                    this.createFirework(x, y);
+                }, 1000);
+
+                // 点击任意位置生成烟花
+                document.addEventListener('click', (e) => {
+                    this.createFirework(e.clientX, e.clientY);
+                });
+            },
+            
+            // 创建烟花粒子
+            createFirework: function(x, y) {
+                const container = document.getElementById('fireworkContainer');
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFD166', '#FF69B4', '#9370DB', '#FFB6C1', '#FFD700'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 生成50个烟花粒子
+                for (let i = 0; i < 50; i++) {
+                    const particle = document.createElement('div');
+                    const size = Math.random() * 10 + 5;
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 150 + 80;
+                    
+                    particle.classList.add('firework-particle');
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    particle.style.left = `${x}px`;
+                    particle.style.top = `${y}px`;
+                    particle.style.backgroundColor = color;
+                    particle.style.boxShadow = `0 0 10px ${color}`;
+                    particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+                    
+                    container.appendChild(particle);
+                    
+                    // 2秒后移除粒子
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 2000);
+                }
+            },
+            
+            // 初始化背景音乐
+            initMusic: function() {
+                const audio = document.getElementById('birthdayMusic');
+                const eggAudio = document.getElementById('eggMusic');
+                const soundBtn = document.getElementById('soundBtn');
+                const soundIcon = document.getElementById('soundIcon');
+                
+                // 声音控制按钮逻辑
+                soundBtn.addEventListener('click', () => {
+                    if (audio.muted) {
+                        audio.muted = false;
+                        eggAudio.muted = false;
+                        soundIcon.classList.remove('fa-volume-off');
+                        soundIcon.classList.add('fa-volume-up');
+                        audio.play().catch(err => console.log('音乐播放已开启'));
+                    } else {
+                        audio.muted = true;
+                        eggAudio.muted = true;
+                        soundIcon.classList.remove('fa-volume-up');
+                        soundIcon.classList.add('fa-volume-off');
+                    }
+                });
+
+                // 页面首次点击时播放音乐（解决浏览器自动播放限制）
+                document.addEventListener('click', () => {
+                    if (audio.paused && !audio.muted) {
+                        audio.play().catch(err => {
+                            audio.muted = false;
+                            eggAudio.muted = false;
+                            soundIcon.classList.remove('fa-volume-off');
+                            soundIcon.classList.add('fa-volume-up');
+                        });
+                    }
+                }, { once: true });
+            },
+            
+            // 创建彩蛋动态效果（花瓣+彩纸飘落）
+            createEggEffect: function() {
+                const colors = ['#FF69B4', '#FFD700', '#9370DB', '#FFB6C1', '#4ECDC4', '#FF6B6B', '#FFFFFF'];
+                const shapes = ['circle', 'square', 'triangle'];
+                
+                // 生成100个花瓣/彩纸粒子
+                for (let i = 0; i < 100; i++) {
+                    const isPetal = Math.random() > 0.3;
+                    const element = document.createElement('div');
+                    const size = Math.random() * 15 + 5;
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    const x = Math.random() * window.innerWidth;
+                    const delay = Math.random() * 2;
+                    
+                    if (isPetal) {
+                        // 花瓣效果
+                        element.classList.add('egg-petal');
+                        element.style.width = `${size}px`;
+                        element.style.height = `${size}px`;
+                        element.style.backgroundColor = color;
+                        element.style.left = `${x}px`;
+                        element.style.top = `${-20}px`;
+                        element.style.animationDelay = `${delay}s`;
+                        element.style.opacity = Math.random() * 0.8 + 0.2;
+                    } else {
+                        // 彩纸效果
+                        element.classList.add('egg-confetti');
+                        element.style.width = `${size * 2}px`;
+                        element.style.height = `${size}px`;
+                        element.style.backgroundColor = color;
+                        element.style.left = `${x}px`;
+                        element.style.top = `${-20}px`;
+                        element.style.animationDelay = `${delay}s`;
+                        element.style.opacity = Math.random() * 0.8 + 0.2;
+                        // 随机旋转
+                        element.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    }
+                    
+                    document.body.appendChild(element);
+                    
+                    // 3秒后移除元素
+                    setTimeout(() => {
+                        element.remove();
+                    }, 4000);
+                }
+            },
+            
+            // 绑定所有按钮事件
+            bindEvents: function() {
+                // 页面1 → 页面2
+                document.getElementById('btnPage1To2').addEventListener('click', () => {
+                    this.goToPage(1);
+                });
+                
+                // 页面2：我很喜欢 → 页面4；我不喜欢 → 仅抖动无跳转
+                document.getElementById('btnPage2To4').addEventListener('click', () => {
+                    this.goToPage(3);
+                });
+                document.getElementById('btnPage2NoAction').addEventListener('click', (e) => {
+                    e.target.classList.add('animate-shake');
+                    setTimeout(() => {
+                        e.target.classList.remove('animate-shake');
+                    }, 500);
+                });
+                
+                // 页面3 → 页面4（如需启用登录页可使用）
+                document.getElementById('btnPage3To4').addEventListener('click', () => {
+                    this.goToPage(3);
+                });
+                
+                // 页面4 → 页面5
+                document.getElementById('btnPage4To5').addEventListener('click', () => {
+                    this.goToPage(4);
+                });
+                
+                // 页面5 → 页面6
+                document.getElementById('btnPage5To6').addEventListener('click', () => {
+                    this.goToPage(5);
+                });
+                
+                // 页面6 → 页面1（重新开始）
+                document.getElementById('btnPage6To1').addEventListener('click', () => {
+                    this.goToPage(0);
+                });
+                
+                // 彩蛋按钮 - 增强动态效果+专属音乐
+                document.getElementById('btnEasterEgg').addEventListener('click', (e) => {
+                    // 播放彩蛋专属音乐
+                    const eggAudio = document.getElementById('eggMusic');
+                    eggAudio.volume = 0.8;
+                    eggAudio.currentTime = 0;
+                    eggAudio.play().catch(() => {
+                        // 如果播放失败，尝试先取消静音
+                        eggAudio.muted = false;
+                        eggAudio.play();
+                    });
+                    
+                    // 显示祝福提示
+                    alert('🎉 生日快乐！愿你每天都有甜甜的笑容，满满的幸福！\n愿所有美好和温柔都如约而至～');
+                    
+                    // 生成烟花
+                    this.createFirework(e.clientX, e.clientY);
+                    
+                    // 生成彩蛋动态效果（花瓣+彩纸飘落）
+                    this.createEggEffect();
+                    
+                    // 1秒后再生成一波效果，增强视觉冲击
+                    setTimeout(() => {
+                        this.createEggEffect();
+                        this.createFirework(window.innerWidth/2, window.innerHeight/2);
+                    }, 500);
+                });
+            },
+            
+            // 播放点击音效（可选增强）
+            playClickSound: function() {
+                // 可添加点击音效
+                const clickSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3');
+                clickSound.volume = 0.3;
+                clickSound.play().catch(() => {});
+            }
+        };
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            pageManager.init();
+        });
+    </script>
+</body>
+</html>
